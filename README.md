@@ -25,6 +25,8 @@ This project demonstrates a real-world enterprise integration use case:
 
 There are two flows:
 
+ ![sass-sync-integrator](https://github.com/user-attachments/assets/f722949c-f240-48c0-9ba6-35514b6e4ec9)
+
 ### 1. Manual Trigger Flow
 
 - Triggered via HTTP GET request at `/sync`
