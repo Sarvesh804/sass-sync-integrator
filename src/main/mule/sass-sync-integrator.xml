@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="3ae0adcf-21a7-45b9-87cc-3169907e9b24" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="sass-sync-integratorFlow2" doc:id="2c3c4fe2-b55f-4884-a841-b9cf7ba30e64" >
+		<http:listener doc:name="Listener" doc:id="8fcc545b-08ea-4e2d-860f-b8d2366778d9" path="/sync" config-ref="HTTP_Listener_config" />
+		<try doc:name="Try" doc:id="8c7ea9a6-2747-4708-8877-6776f69a13c2" >
+			<logger level="DEBUG" doc:name="Logger" doc:id="b7e18090-2b86-4fc5-987f-6c75c061ef40" message="#[payload]" />
+			<http:request method="GET" doc:name="CRM_Request_Config" doc:id="4d94acdc-46d1-4143-9a8c-5205357664c7" url="https://955121ef-d257-49a1-9264-d3b31ecb8bd7.mock.pstmn.io" />
+			<logger level="INFO" doc:name="Logger" doc:id="d023248b-2c53-4c72-aa6f-24a103ef5aca" message="#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="14adefad-ebdd-4689-be45-f11b202b8f2a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+read(payload,"application/json")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="b8bb72da-62ab-4e32-9a8d-b6f7ae88cecd" message="#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="b429e0cc-3784-47e7-8e48-652597bdf247">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	customers: payload.customers map ((cust) -> {
+    name: cust.name,
+    email: cust.email,
+    joinedOn: cust.createdAt
+  })
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="8a267306-cebf-4b97-a420-50865050c137" message="#[payload]" />
+			<http:request method="POST" doc:name="Request" doc:id="46bf1f89-d942-46d8-a98f-cc4d89267a46" url="https://webhook.site/01ce21b5-3377-42d6-bd57-4769fde715af">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+		</http:request>
+		</try>
+		<try doc:name="Catch" doc:id="66fea003-05ad-43c6-bb48-daee5b4b6b21" >
+			<logger level="ERROR" doc:name="Logger" doc:id="1a3a2a56-f9f5-433c-bb19-45323a25b458" message="#[error.description]" />
+			<set-payload value="#[payload]" doc:name="Set Payload" doc:id="a9648ecf-66dc-4443-be16-531c5b04cc91" />
+			<set-variable value="500" doc:name="Set Variable" doc:id="243f2615-6b85-4a42-9831-bd99fe7a28ad" variableName="HTTP Status"/>
+		</try>
+	</flow>
+	<flow name="scheduled-sync-Flow" doc:id="e522a821-6e1e-45de-af08-5be8b1afec66" >
+		<scheduler doc:name="Scheduler" doc:id="7b5bd34d-681e-4a0e-b8b3-d774e48c7fcf" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<try doc:name="Try" doc:id="42df30e1-0e33-4fb9-bc6b-e87e552d0cbf" >
+			<logger level="DEBUG" doc:name="Logger" doc:id="a33a5c86-6ae4-466c-ad85-9f11949391c7" message="#[payload]" />
+			<http:request method="GET" doc:name="CRM_Request_Config" doc:id="844355ad-b0c3-4bb9-9f68-86cc011694bd" url="https://955121ef-d257-49a1-9264-d3b31ecb8bd7.mock.pstmn.io" />
+			<logger level="INFO" doc:name="Logger1" doc:id="bdac0090-81d7-4cc1-8536-2bed259332f6" message="#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="6cb4fe90-8017-4f16-bc0b-93889f652f2e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+read(payload,"application/json")]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger2" doc:id="dd32ffc6-d811-4e4e-8c61-7868b8dc1655" message="#[payload]" />
+			<ee:transform doc:name="Transform Message1" doc:id="85a9f62d-543a-4733-b728-0b13020e0c35" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	customers: payload.customers map ((cust) -> {
+    name: cust.name,
+    email: cust.email,
+    joinedOn: cust.createdAt
+  })
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger3" doc:id="c5a37920-958b-47fe-a4ec-a4f4fe9fdbcb" message="#[payload]" />
+			<http:request method="POST" doc:name="Request" doc:id="8160ceb0-488f-40ee-87fd-4fb341e8ffeb" url="https://webhook.site/01ce21b5-3377-42d6-bd57-4769fde715af" >
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+			</http:request>
+		</try>
+		<try doc:name="Catch" doc:id="1d041063-d800-484c-a991-0eb9b70694ce" >
+			<logger level="ERROR" doc:name="Logger" doc:id="7a8ca1c8-521b-4ae5-a84a-6a4dee3c3434" message="#[error.description]" />
+			<set-payload value="#[payload]" doc:name="Set Payload" doc:id="7290208e-5f53-46f8-8202-3f0555fb7fe0" />
+			<set-variable value="500" doc:name="Set Variable" doc:id="a53d23ba-9e3b-4946-8616-3aaab6427b8a" variableName="HTTP Status" />
+		</try>
+	</flow>
+</mule>
